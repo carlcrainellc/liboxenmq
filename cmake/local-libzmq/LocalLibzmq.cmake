@@ -22,6 +22,20 @@ foreach(lang C CXX)
     endforeach()
 endforeach()
 
+# Cross-compile: ExternalProject must know Windows or CMake adds Linux -rdynamic.
+if(CMAKE_SYSTEM_NAME)
+    list(APPEND libzmq_compiler_args "-DCMAKE_SYSTEM_NAME=${CMAKE_SYSTEM_NAME}")
+endif()
+if(CMAKE_SYSTEM_VERSION)
+    list(APPEND libzmq_compiler_args "-DCMAKE_SYSTEM_VERSION=${CMAKE_SYSTEM_VERSION}")
+endif()
+if(CMAKE_RC_COMPILER)
+    list(APPEND libzmq_compiler_args "-DCMAKE_RC_COMPILER=${CMAKE_RC_COMPILER}")
+endif()
+if(CMAKE_TOOLCHAIN_FILE)
+    list(APPEND libzmq_compiler_args "-DCMAKE_TOOLCHAIN_FILE=${CMAKE_TOOLCHAIN_FILE}")
+endif()
+
 if(CMAKE_OSX_DEPLOYMENT_TARGET)
     list(APPEND libzmq_compiler_args "-DCMAKE_OSX_DEPLOYMENT_TARGET=${CMAKE_OSX_DEPLOYMENT_TARGET}")
 endif()
@@ -44,4 +58,8 @@ add_library(libzmq_vendor STATIC IMPORTED GLOBAL)
 add_dependencies(libzmq_vendor libzmq_external)
 set_target_properties(libzmq_vendor PROPERTIES
     INTERFACE_INCLUDE_DIRECTORIES ${LIBZMQ_PREFIX}/include
+    INTERFACE_COMPILE_DEFINITIONS ZMQ_STATIC
     IMPORTED_LOCATION ${LIBZMQ_PREFIX}/${CMAKE_INSTALL_LIBDIR}/libzmq.a)
+if(WIN32)
+    set_property(TARGET libzmq_vendor APPEND PROPERTY INTERFACE_LINK_LIBRARIES ws2_32 iphlpapi)
+endif()
